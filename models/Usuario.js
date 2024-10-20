@@ -9,6 +9,7 @@ const Usuario = mongoose.model('Usuario',{
     dataAssinatura: Date,
     email: String,
     senha: String,
-  })
+  
+})
 
 module.exports = Usuario;

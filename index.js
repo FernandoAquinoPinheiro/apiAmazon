@@ -15,7 +15,7 @@ app.use(express.json())
 
 //Primeira nota
 app.get('/', (reg, res) => {
-    res.json({ message: 'Bem-vindo ao meu servidor' })
+    res.json({ message: 'Bem-vindo ao meu servidor....' })
 })
 
 
@@ -57,7 +57,7 @@ app.post('/filme', async (req, res) => {
 
     try {
         await Filme.create(filme)
-        res.status(200).json({ message: "Pessoa inserida no sistema" })
+        res.status(200).json({ message: "Filme inserido com sucesso" })
     } catch (error) {
         res.status(500).json({ erro: error })
     }
@@ -76,7 +76,7 @@ app.post('/genero', async (req, res) => {
 
     try {
         await Genero.create( genero)
-        res.status(200).json({ message: "Pessoa inserida no sistema" })
+        res.status(200).json({ message: "Genero inserido no sistema" })
     } catch (error) {
         res.status(500).json({ erro: error })
     }
@@ -86,18 +86,18 @@ app.post('/genero', async (req, res) => {
 //Read usuario
 app.get("/usuario", async (req, res) => {
     try {
-        const assinante = await Usuario.find()
-        res.status(200).json({ assinante })
+        const usuarios = await Usuario.find();
+        res.status(200).json({usuarios});
     } catch (error) {
-        res.status(500).json({ erro: error })
+        res.status(500).json({ erro: error });
     }
-})
+});
 
 
 //Read filme
-app.get("/fime",async(req,resp)=>{
+app.get("/filme",async(req,res)=>{
     try {
-        const flme = await Filme.find().populate('usuario','genero');
+        const filme = await Filme.find().populate('usuario','genero');
 
         const resultado = filme.map(filme => ({
             _id: filme._id,
@@ -163,7 +163,7 @@ app.get("/filme/:id", async (req, res) => {
 app.get("/genero/:id", async (req, res) => {
     const id = req.params.id;
     try {
-        const buscaGenero = await Filme.findOne({ _id: id })
+        const buscaGenero = await Genero.findOne({ _id: id })
 
         if (!buscaGenero) {
             res.status(422).json({ message: "Genero não encontrado!" })
@@ -235,7 +235,7 @@ app.patch("/filme/:id", async (req, res) => {
 
 
 //update genero
-app.patch("/filme/:id", async (req, res) => {
+app.patch("/genero/:id", async (req, res) => {
     const id = req.params.id
 
     const { descricao, nomeGenero } = req.body
