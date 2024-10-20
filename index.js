@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const { default: mongoose } = require('mongoose');
+const bcrypt = require('bcrypt'); // Para criptografar senhas
+const jwt = require('jsonwebtoken'); // Para gerar e verificar tokens JWT
 const Usuario = require("./models/Usuario");
 const Genero = require("./models/Genero");
 const Filme = require("./models/Filme");
@@ -20,8 +22,14 @@ app.get('/', (req, res) => {
 
 
 //Create usuario
+
+
 app.post('/usuario', async (req, res) => {
-    const { nome, idade, dataNascimento, cpf, valorAssinatura, dataAssinatura, email, senha } = req.body
+    const { nome, idade, dataNascimento, cpf, valorAssinatura, dataAssinatura, email, senha } = req.body;
+
+    // Criptografar a senha
+    const salt = await bcrypt.genSalt(10);
+    const senhaCriptografada = await bcrypt.hash(senha, salt);
 
     const usuario = {
         nome,
@@ -31,17 +39,45 @@ app.post('/usuario', async (req, res) => {
         valorAssinatura,
         dataAssinatura,
         email,
-        senha,
-    }
+        senha: senhaCriptografada,
+    };
 
     try {
-        await Usuario.create(usuario)
-        res.status(200).json({ message: "Pessoa inserida no sistema" })
+        await Usuario.create(usuario);
+        res.status(200).json({ message: "Usuário inserido no sistema" });
     } catch (error) {
-        res.status(500).json({ erro: error })
+        res.status(500).json({ erro: error });
     }
+});
 
-})
+//endpoint de login
+
+
+app.post('/login', async (req, res) => {
+    const { email, senha } = req.body;
+
+    try {
+        // Encontrar o usuário pelo email
+        const usuario = await Usuario.findOne({ email });
+        if (!usuario) {
+            return res.status(400).json({ message: 'Usuário não encontrado!' });
+        }
+
+        // Verificar a senha
+        const senhaValida = await bcrypt.compare(senha, usuario.senha);
+        if (!senhaValida) {
+            return res.status(400).json({ message: 'Senha inválida!' });
+        }
+
+        // Criar um token (opcional)
+        const token = jwt.sign({ id: usuario._id }, 'seu_segredo', { expiresIn: '1h' });
+
+        res.status(200).json({ message: 'Login realizado com sucesso!', token });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
 
 //Create Filme
 app.post('/filme', async (req, res) => {
