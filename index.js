@@ -14,7 +14,7 @@ app.use(
 app.use(express.json())
 
 //Primeira nota
-app.get('/', (reg, res) => {
+app.get('/', (req, res) => {
     res.json({ message: 'Bem-vindo ao meu servidor....' })
 })
 
@@ -95,24 +95,25 @@ app.get("/usuario", async (req, res) => {
 
 
 //Read filme
-app.get("/filme",async(req,res)=>{
+app.get("/filme", async (req, res) => {
     try {
-        const filme = await Filme.find().populate('usuario','genero');
+        const filmes = await Filme.find().populate('usuario').populate('genero');
 
-        const resultado = filme.map(filme => ({
+        const resultado = filmes.map(filme => ({
             _id: filme._id,
             nomeFilme: filme.nomeFilme,
             anoLancamento: filme.anoLancamento,
             pais: filme.pais,
-            usuario: filme.usuario.nome,
-            genero: filme.genero.nomeGenero
-            }));
-            res.status(200).json(resultado);
+            usuario: filme.usuario ? filme.usuario.nome : 'Usuário não encontrado',
+            genero: filme.genero ? filme.genero.nomeGenero : 'Gênero não encontrado'
+        }));
+
+        res.status(200).json(resultado);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ erro: 'Erro ao ler Filmes.'});
+        res.status(500).json({ erro: 'Erro ao ler Filmes.' });
     }
-})
+});
 
 //Read genero
 app.get("/genero", async (req, res) => {
@@ -317,6 +318,60 @@ app.delete("/genero/:id", async (req, res) => {
         res.status(500).json({ erro: error })
     }
 })
+
+// calcular a idade dos assinantes
+app.get('/media-idade', async (req, res) => {
+    try {
+        const resultado = await Usuario.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    mediaIdade: { $avg: '$idade' }
+                }
+            }
+        ]);
+
+        if (resultado.length === 0) {
+            return res.status(404).json({ message: 'Nenhum usuário encontrado' });
+        }
+
+        res.status(200).json({ mediaIdade: resultado[0].mediaIdade });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+//total de filmes cadastrados
+app.get('/total-filmes', async (req, res) => {
+    try {
+        const total = await Filme.countDocuments();
+        res.status(200).json({ totalFilmes: total });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+app.get('/soma-valor-assinatura', async (req, res) => {
+    try {
+        const resultado = await Usuario.aggregate([
+            {
+                $group: {
+                    _id: null,  // Agrupa todos os documentos em um único grupo
+                    totalValorAssinatura: { $sum: "$valorAssinatura" }  // Soma todos os valores
+                }
+            }
+        ]);
+
+        const total = resultado.length > 0 ? resultado[0].totalValorAssinatura : 0;
+        res.status(200).json({ totalValorAssinatura: total });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+
+
+
 
 
 
